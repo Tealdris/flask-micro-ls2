@@ -1,0 +1,66 @@
+version: '3'
+services:
+ flaskapp:
+   image: flaskapp:ebal
+   build: ./web
+
+   restart: always
+
+   expose:
+     - "8000"
+
+   volumes:
+     - ./web:/home/flask/app/web
+
+   depends_on:
+     - redis
+     - postgres
+
+   links:
+     - redis
+     - postgres
+
+   environment:
+     FLASK_DEBUG: 1
+
+   deploy:
+     mode: replicated
+     replicas: 3
+
+ redis:
+
+   image: redis:alpine
+   restart: always
+   deploy:
+     mode: replicated
+     replicas: 3
+
+ nginx:
+   image: nginx:alpine
+   build: nginx/
+   restart: always
+
+   ports:
+     - "80:80"
+   deploy:
+     mode: replicated
+     replicas: 1
+
+   depends_on:
+     - flaskapp
+
+ postgres:
+   restart: always
+   image: postgres:alpine
+
+   volumes:
+     - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+     - ./postgres/data:/var/lib/postgresql/data
+
+   environment:
+     POSTGRES_PASSWORD: linode123
+     POSTGRES_DB: linode
+
+   expose:
+     - "5432"
+
